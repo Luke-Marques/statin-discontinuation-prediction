@@ -4,7 +4,10 @@ import polars as pl
 
 
 def get_drugs_first_issue_date_for_eid(rx: pl.LazyFrame) -> pl.LazyFrame:
-    """"""
+    """
+    Extract the first issue date in the provided prescription records dataframe for each
+    individual (eid).
+    """
     return rx.with_columns(
         first_issue_date=pl.col("issue_date").first().over("eid", "generic_name")
     )

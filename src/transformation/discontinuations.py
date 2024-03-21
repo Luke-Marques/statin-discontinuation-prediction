@@ -102,13 +102,6 @@ def identify_restarts(rx: pl.LazyFrame) -> pl.LazyFrame:
     return rx
 
 
-def generate_discontinuation_summary(
-    discontinuations: pl.DataFrame,
-    out_path: Path = Path("data") / "statins" / "discontinuation_summary.csv",
-) -> Tuple[pl.DataFrame, Path]:
-    return
-
-
 def generate_sample_size_summary(
     discontinuations: pl.DataFrame | pl.LazyFrame,
     out_path: Path = Path("data") / "statins" / "discontinuation_sample_size.csv",

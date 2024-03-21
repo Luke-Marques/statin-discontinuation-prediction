@@ -35,6 +35,7 @@ def identify_interruption(
             pl.col("first_issue_date")
             <= (pl.col("max_global_rx_issue_date") - pl.duration(days=365))
         )
+        & (pl.col("next_issue_date").dt.date != pl.col("issue_date").dt.date)
     ).alias("interrupt")
 
     # apply polars expression
@@ -49,28 +50,20 @@ def identify_discontinuations(
     missed_rx_count: int = 4,
 ) -> pl.LazyFrame:
     """Identify and label instances of discontinuations from prescription records."""
-    if "expected_rx_duration" not in rx.columns:
-        rx = rx.pipe(calculate_rx_duration)
 
-    # define polars expression for the date threshold to determine discontinuations
-    discontinuation_date_threshold = pl.col("issue_date") + (
+    # define polars expression for the date threshold to determine interruption
+    date_threshold: pl.Expr = pl.col("issue_date") + (
         pl.col("expected_rx_duration") * missed_rx_count
     ).cast(pl.Duration("ms"))
 
     # define polars expression for discontinuation logic
-    discontinued = (
-        (
-            pl.col("next_issue_date").is_null()
-            | (
-                (pl.col("next_issue_date") > discontinuation_date_threshold)
-                & (pl.col("issue_date") != pl.col("next_issue_date"))
-            )
-        )
+    discontinue = (
+        pl.col("next_issue_date").is_null()
         & (
             pl.col("date_of_death").is_null()
-            | (pl.col("date_of_death") > discontinuation_date_threshold)
+            | (pl.col("date_of_death") > date_threshold)
         )
-        & (pl.col("max_global_rx_issue_date") >= discontinuation_date_threshold)
+        & (pl.col("max_global_rx_issue_date") >= date_threshold)
         & (pl.col("expected_rx_end_date") < max_global_rx_issue_date)
         & (
             pl.col("first_issue_date")
@@ -80,24 +73,10 @@ def identify_discontinuations(
             pl.col("first_issue_date")
             <= (pl.col("max_global_rx_issue_date") - pl.duration(days=365))
         )
-        & (
-            pl.col("next_issue_date").is_null()
-            | ((pl.col("next_issue_date") - pl.col("issue_date")) > pl.duration(days=1))
-        )
-    )
+    ).alias("discontinue")
 
-    # apply polars expressions
-    rx = (
-        rx.sort("eid", "issue_date")
-        .with_row_index()
-        .with_columns(
-            discontinued=discontinued,
-            discontinuation_date=pl.when(discontinued)
-            .then(pl.col("expected_rx_end_date"))
-            .otherwise(None),
-        )
-        .drop("index")
-    )
+    # apply polars expression
+    rx = rx.sort("eid", "issue_date").with_columns(discontinue)
 
     return rx
 

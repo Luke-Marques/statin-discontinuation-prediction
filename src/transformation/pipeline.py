@@ -2,11 +2,10 @@ import argparse
 from pathlib import Path
 
 import polars as pl
-from discontinuations import discontinuation_pipeline, generate_sample_size_summary
+from discontinuations import discontinuation_pipeline
 from dosage import dosage_pipeline
 from durations import calculate_rx_end_date
 from switches import identify_switches
-from rx_summary import generate_eid_rx_summary
 
 
 def select_columns(rx: pl.DataFrame) -> pl.DataFrame:

@@ -83,7 +83,7 @@ def identify_discontinuations(
 
 def count_discontinuations(rx: pl.LazyFrame) -> pl.LazyFrame:
     """Count the number of discontinuation events per `eid`."""
-    rx = rx.with_columns(discontinuation_count=pl.col("discontinued").sum().over("eid"))
+    rx = rx.with_columns(discontinuation_count=pl.col("discontinue").sum().over("eid"))
 
     return rx
 
@@ -94,7 +94,7 @@ def identify_restarts(rx: pl.LazyFrame) -> pl.LazyFrame:
     discontinuation event.
     """
     rx = rx.with_columns(
-        restarted=(pl.col("discontinued") & pl.col("next_issue_date").is_not_null())
+        restarted=(pl.col("discontinue") & pl.col("next_issue_date").is_not_null())
     )
 
     return rx
@@ -160,7 +160,7 @@ def generate_sample_size_summary(
                 (
                     pl.col("eid")
                     .filter(
-                        (pl.col("discontinued").sum().over("eid") == 1)
+                        (pl.col("discontinue").sum().over("eid") == 1)
                         & (pl.col("restarted").sum().over("eid") == 0)
                     )
                     .unique()
@@ -170,9 +170,9 @@ def generate_sample_size_summary(
                 (
                     pl.col("eid")
                     .filter(
-                        (pl.col("discontinued").sum().over("eid") == 1)
+                        (pl.col("discontinue").sum().over("eid") == 1)
                         & (pl.col("restarted").sum().over("eid") == 0)
-                        & pl.col("discontinued")
+                        & pl.col("discontinue")
                         & (
                             pl.col("issue_date") - pl.col("first_issue_date")
                             <= pl.duration(days=365)
@@ -186,9 +186,9 @@ def generate_sample_size_summary(
             + [
                 pl.col("eid")
                 .filter(
-                    (pl.col("discontinued").sum().over("eid") == 1)
+                    (pl.col("discontinue").sum().over("eid") == 1)
                     & (pl.col("restarted").sum().over("eid") == 0)
-                    & pl.col("discontinued")
+                    & pl.col("discontinue")
                     & (pl.col("rx_count") == i)
                 )
                 .unique()
@@ -213,7 +213,7 @@ def generate_sample_size_summary(
                 ),
                 (
                     pl.col("eid")
-                    .filter(pl.col("discontinued"))
+                    .filter(pl.col("discontinue"))
                     .unique()
                     .count()
                     .alias("Total Discontinuers")

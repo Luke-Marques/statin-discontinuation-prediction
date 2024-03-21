@@ -34,10 +34,10 @@ def select_columns(rx: pl.DataFrame) -> pl.DataFrame:
             "expected_rx_duration",
             "expected_rx_end_date",
             "first_issue_date",
-            "discontinued",
-            "discontinuation_date",
+            "interrupt",
+            "discontinue",
             "discontinuation_count",
-            "restarted",
+            "restart",
             "is_switch",
             "switch_to_drug",
         ]
@@ -68,8 +68,8 @@ def pipeline(
         .sort("eid", "issue_date")
     )
 
-    # if not return_lazy:
-    #     return rx.collect()
+    if not return_lazy:
+        return rx.collect()
 
     return rx
 
@@ -156,26 +156,6 @@ def main() -> None:
     # show first rows of processed rx dataframe
     print("Transformed prescription records glimpse:")
     print(rx_processed)
-
-    # generate discontinuations sample size summary filea
-    discontinuation_summary_all, _ = generate_sample_size_summary(rx_processed)
-    print(discontinuation_summary_all)
-    discontinuation_summary_simvastatin, _ = generate_sample_size_summary(
-        rx_processed, drugs_to_include="simvastatin"
-    )
-    print(discontinuation_summary_simvastatin)
-    discontinuation_summary_atorvastatin, _ = generate_sample_size_summary(
-        rx_processed, drugs_to_include="atorvastatin"
-    )
-    print(discontinuation_summary_atorvastatin)
-    discontinuation_summary_simvastatin_atorvastatin, _ = generate_sample_size_summary(
-        rx_processed, drugs_to_exclude=["simvastatin", "atorvastatin"]
-    )
-    print(discontinuation_summary_simvastatin_atorvastatin)
-
-    # generate eid rx summary file
-    rx_summary, _ = generate_eid_rx_summary(rx_processed)
-    print(rx_summary)
 
 
 if __name__ == "__main__":

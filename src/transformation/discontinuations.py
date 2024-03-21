@@ -1,9 +1,6 @@
 from datetime import date, datetime
-from pathlib import Path
-from typing import Tuple, List
 
 import polars as pl
-from durations import calculate_rx_duration
 
 
 def get_drugs_first_issue_date_for_eid(rx: pl.LazyFrame) -> pl.LazyFrame:

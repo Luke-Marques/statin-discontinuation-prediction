@@ -94,7 +94,9 @@ def identify_restarts(rx: pl.LazyFrame) -> pl.LazyFrame:
     discontinuation event.
     """
     rx = rx.with_columns(
-        restarted=(pl.col("discontinue") & pl.col("next_issue_date").is_not_null())
+        (pl.col("discontinue") & pl.col("next_issue_date").is_not_null()).alias(
+            "restart"
+        )
     )
 
     return rx
@@ -161,7 +163,7 @@ def generate_sample_size_summary(
                     pl.col("eid")
                     .filter(
                         (pl.col("discontinue").sum().over("eid") == 1)
-                        & (pl.col("restarted").sum().over("eid") == 0)
+                        & (pl.col("restart").sum().over("eid") == 0)
                     )
                     .unique()
                     .count()
@@ -171,7 +173,7 @@ def generate_sample_size_summary(
                     pl.col("eid")
                     .filter(
                         (pl.col("discontinue").sum().over("eid") == 1)
-                        & (pl.col("restarted").sum().over("eid") == 0)
+                        & (pl.col("restart").sum().over("eid") == 0)
                         & pl.col("discontinue")
                         & (
                             pl.col("issue_date") - pl.col("first_issue_date")
@@ -187,7 +189,7 @@ def generate_sample_size_summary(
                 pl.col("eid")
                 .filter(
                     (pl.col("discontinue").sum().over("eid") == 1)
-                    & (pl.col("restarted").sum().over("eid") == 0)
+                    & (pl.col("restart").sum().over("eid") == 0)
                     & pl.col("discontinue")
                     & (pl.col("rx_count") == i)
                 )
@@ -206,7 +208,7 @@ def generate_sample_size_summary(
                 ),
                 (
                     pl.col("eid")
-                    .filter(pl.col("restarted"))
+                    .filter(pl.col("restart"))
                     .unique()
                     .count()
                     .alias("Restarters")

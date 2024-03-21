@@ -10,7 +10,7 @@ def get_drugs_first_issue_date_for_eid(rx: pl.LazyFrame) -> pl.LazyFrame:
     )
 
 
-def identify_interruption(
+def identify_interruptions(
     rx: pl.LazyFrame,
     missed_rx_count: int = 4,
 ) -> pl.LazyFrame:

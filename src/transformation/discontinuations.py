@@ -87,14 +87,10 @@ def count_discontinuations(rx: pl.LazyFrame) -> pl.LazyFrame:
 
 def identify_restarts(rx: pl.LazyFrame) -> pl.LazyFrame:
     """
-    Identify and label instances of individuals restarting treatment, following a
-    discontinuation event.
+    Identify and label instances of individuals restarting treatment, following an
+    interruption event.
     """
-    rx = rx.with_columns(
-        (pl.col("discontinue") & pl.col("next_issue_date").is_not_null()).alias(
-            "restart"
-        )
-    )
+    rx = rx.with_columns((pl.col("interrupt").shift()).alias("restart"))
 
     return rx
 
@@ -104,8 +100,13 @@ def discontinuation_pipeline(
     max_global_rx_issue_date: date | datetime,
     missed_rx_count: int = 4,
 ) -> pl.LazyFrame:
+    """
+    Discontinuation pipeline which identifies and labels treatment interruptions,
+    discontinuations, and restarts.
+    """
     rx = (
         rx.pipe(get_drugs_first_issue_date_for_eid)
+        .pipe(identify_interruptions, missed_rx_count)
         .pipe(identify_discontinuations, max_global_rx_issue_date, missed_rx_count)
         .pipe(count_discontinuations)
         .pipe(identify_restarts)

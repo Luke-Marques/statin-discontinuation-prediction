@@ -3,19 +3,9 @@ from datetime import date, datetime
 import polars as pl
 
 
-def get_drugs_first_issue_date_for_eid(rx: pl.LazyFrame) -> pl.LazyFrame:
-    """
-    Extract the first issue date in the provided prescription records dataframe for each
-    individual (eid).
-    """
-    return rx.with_columns(
-        first_issue_date=pl.col("issue_date").first().over("eid", "generic_name")
-    )
-
-
 def identify_interruptions(
     rx: pl.LazyFrame,
-    missed_rx_count: int = 4,
+    missed_rx_count: int = 2,
 ) -> pl.LazyFrame:
     """
     Identify and label instances of treatment interruption from prescription records.
@@ -59,20 +49,21 @@ def identify_discontinuations(
     # define polars expression for discontinuation logic
     discontinue = (
         pl.col("next_issue_date").is_null()
-        & (
-            pl.col("date_of_death").is_null()
-            | (pl.col("date_of_death") > date_threshold)
-        )
-        & (pl.col("max_global_rx_issue_date") >= date_threshold)
-        & (pl.col("expected_rx_end_date") < max_global_rx_issue_date)
-        & (
-            pl.col("first_issue_date")
-            >= (pl.col("min_global_rx_issue_date") + pl.duration(days=365))
-        )
-        & (
-            pl.col("first_issue_date")
-            <= (pl.col("max_global_rx_issue_date") - pl.duration(days=365))
-        )
+        | ((pl.col("next_issue_date") - pl.col("issue_date")) > pl.duration(days=365))
+        # & (
+        #     pl.col("date_of_death").is_null()
+        #     | (pl.col("date_of_death") > date_threshold)
+        # )
+        # & (pl.col("max_global_rx_issue_date") >= date_threshold)
+        # & (pl.col("expected_rx_end_date") < max_global_rx_issue_date)
+        # & (
+        #     pl.col("first_issue_date")
+        #     >= (pl.col("min_global_rx_issue_date") + pl.duration(days=365))
+        # )
+        # & (
+        #     pl.col("first_issue_date")
+        #     <= (pl.col("max_global_rx_issue_date") - pl.duration(days=365))
+        # )
     ).alias("discontinue")
 
     # apply polars expression
@@ -98,6 +89,24 @@ def identify_restarts(rx: pl.LazyFrame) -> pl.LazyFrame:
     return rx
 
 
+def identify_discontinuations_in_first_year(rx: pl.LazyFrame) -> pl.LazyFrame:
+    """
+    Identify and label instances of individuals discontinuing treatment within 1 year
+    of their first prescription of the drug-class.
+    """
+    rx = rx.with_columns(
+        (
+            (pl.col("discontinue"))
+            & (
+                pl.col("issue_date")
+                <= (pl.col("first_issue_date") + pl.duration(days=365))
+            )
+        ).alias("discontinue_first_year")
+    )
+
+    return rx
+
+
 def discontinuation_pipeline(
     rx: pl.LazyFrame,
     max_global_rx_issue_date: date | datetime,
@@ -108,9 +117,9 @@ def discontinuation_pipeline(
     discontinuations, and restarts.
     """
     rx = (
-        rx.pipe(get_drugs_first_issue_date_for_eid)
-        .pipe(identify_interruptions, missed_rx_count)
+        rx.pipe(identify_interruptions, missed_rx_count)
         .pipe(identify_discontinuations, max_global_rx_issue_date, missed_rx_count)
+        .pipe(identify_discontinuations_in_first_year)
         .pipe(count_discontinuations)
         .pipe(identify_restarts)
     )

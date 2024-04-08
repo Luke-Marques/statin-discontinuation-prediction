@@ -6,6 +6,7 @@ from discontinuations import discontinuation_pipeline
 from dosage import dosage_pipeline
 from durations import calculate_rx_end_date
 from switches import identify_switches
+from study_period import study_period_pipeline
 
 
 def select_columns(rx: pl.DataFrame) -> pl.DataFrame:
@@ -35,6 +36,7 @@ def select_columns(rx: pl.DataFrame) -> pl.DataFrame:
             "first_issue_date",
             "interrupt",
             "discontinue",
+            "discontinue_first_year",
             "discontinuation_count",
             "restart",
             "is_switch",
@@ -59,6 +61,7 @@ def pipeline(
         rx.collect()
         .join(ukb_demographics.collect(), on="eid", how="left")
         .join(global_rx_dates.collect(), on="eid", how="left")
+        .pipe(study_period_pipeline)
         .pipe(calculate_rx_end_date)
         .pipe(discontinuation_pipeline, max_global_rx_issue_date)
         .pipe(dosage_pipeline)
@@ -67,8 +70,8 @@ def pipeline(
         .sort("eid", "issue_date")
     )
 
-    if not return_lazy:
-        return rx.collect()
+    # if not return_lazy:
+    #     return rx.collect()
 
     return rx
 

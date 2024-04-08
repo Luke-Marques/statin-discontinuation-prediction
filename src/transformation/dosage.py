@@ -129,7 +129,7 @@ def calculate_quantity_per_day(rx: pl.LazyFrame, round: bool = False) -> pl.Lazy
         rx = rx.with_columns(
             quantity_per_day=pl.when(pl.col("time_supply").is_not_null())
             .then(None)
-            .when(pl.col("next_issue_date").is_not_null() & ~pl.col("discontinued"))
+            .when(pl.col("next_issue_date").is_not_null() & ~pl.col("discontinue"))
             .then(
                 (
                     pl.col("quantity")
@@ -146,7 +146,7 @@ def calculate_quantity_per_day(rx: pl.LazyFrame, round: bool = False) -> pl.Lazy
         rx = rx.with_columns(
             quantity_per_day=pl.when(pl.col("time_supply").is_not_null())
             .then(None)
-            .when(pl.col("next_issue_date").is_not_null() & ~pl.col("discontinued"))
+            .when(pl.col("next_issue_date").is_not_null() & ~pl.col("discontinue"))
             .then(
                 (
                     pl.col("quantity")
@@ -164,7 +164,7 @@ def calculate_dosage_per_day(rx: pl.LazyFrame) -> pl.LazyFrame:
     rx = rx.with_columns(
         pl.when(pl.col("time_supply").is_not_null())
         .then(None)
-        .when(pl.col("next_issue_date").is_not_null() & ~pl.col("discontinued"))
+        .when(pl.col("next_issue_date").is_not_null() & ~pl.col("discontinue"))
         .then(
             (
                 pl.col("volume_prescribed")

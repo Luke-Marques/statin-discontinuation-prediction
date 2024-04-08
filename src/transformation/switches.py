@@ -14,7 +14,7 @@ def identify_switches(
     """
     Identify and label instances of within-class switching from prescription records.
     """
-    if "discontinued" not in rx.columns:
+    if "discontinue" not in rx.columns:
         rx = rx.pipe(identify_discontinuations, max_global_rx_issue_date)
 
     # define polars expressions
@@ -26,7 +26,7 @@ def identify_switches(
     )
     is_switch = (
         (pl.col("generic_name") != pl.col("generic_name").shift(-1)).over("eid")
-        & (pl.col("discontinued") is not True)
+        & (pl.col("discontinue") is not True)
         & (prev_rx_count >= min_switch_from_rx)
         & (prev_rx_count <= max_switch_from_rx)
         & (consecutive_rx_count.shift(-1) >= min_switch_to_rx)

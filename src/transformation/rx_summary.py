@@ -13,7 +13,7 @@ def generate_eid_rx_summary(
         rx.sort("eid", "issue_date")
         .with_columns(
             period=(
-                pl.col("discontinued")
+                pl.col("discontinue")
                 | pl.col("is_switch")
                 | (
                     (pl.col("generic_name") != pl.col("generic_name").shift())
@@ -28,7 +28,7 @@ def generate_eid_rx_summary(
             pl.col("generic_name").first(),
             pl.col("issue_date").min().alias("start_date"),
             pl.col("issue_date").max().alias("end_date"),
-            pl.col("discontinued").last(),
+            pl.col("discontinue").last(),
             pl.col("is_switch").last(),
         )
         .sort("eid", "start_date")
@@ -38,7 +38,7 @@ def generate_eid_rx_summary(
             "period",
             "start_date",
             "end_date",
-            "discontinued",
+            "discontinue",
             "is_switch",
         )
     )
